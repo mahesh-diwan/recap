@@ -1,10 +1,8 @@
 import {
   getOllama,
-  getOllamaModels,
   findOllamaModel,
   isOllamaAvailable,
 } from "@/lib/ollama";
-import { getOpenAI } from "./openai";
 
 export interface SummaryJSON {
   tldr: string;
@@ -192,76 +190,38 @@ export async function getSummaryFromAI(
   transcript: string,
   title: string
 ): Promise<SummaryJSON> {
-  const ollamaAvailable = await isOllamaAvailable();
+  const available = await isOllamaAvailable();
+  if (!available) throw new Error("Ollama not running. Start with: ollama serve");
 
-  if (ollamaAvailable) {
-    const model =
-      (process.env.OLLAMA_MODEL as string) ||
-      (await findOllamaModel("llama3.2:3b", ["qwen2.5:7b", "gemma2:2b"]));
+  const model =
+    (process.env.OLLAMA_MODEL as string) ||
+    (await findOllamaModel("llama3.2:3b", ["qwen2.5:7b", "gemma2:2b"]));
 
-    if (model) {
-      const ollama = getOllama();
-      try {
-        const chunks = chunkTranscript(transcript);
+  if (!model) throw new Error("No Ollama model found. Run: ollama pull llama3.2:3b");
 
-        if (chunks.length <= 1) {
-          const response = await ollama.chat.completions.create({
-            model,
-            messages: [
-              { role: "system", content: SYSTEM_PROMPT },
-              {
-                role: "user",
-                content: buildSummaryPrompt(transcript, title),
-              },
-            ],
-            temperature: 0.3,
-          });
+  const ollama = getOllama();
+  const chunks = chunkTranscript(transcript);
 
-          const content = response.choices[0]?.message?.content;
-          if (content) return JSON.parse(content) as SummaryJSON;
-        } else {
-          const chunkSummaries: string[] = [];
-          for (let i = 0; i < chunks.length; i++) {
-            const summary = await summarizeChunk(
-              ollama,
-              model,
-              chunks[i],
-              i,
-              chunks.length
-            );
-            chunkSummaries.push(summary);
-          }
+  if (chunks.length <= 1) {
+    const response = await ollama.chat.completions.create({
+      model,
+      messages: [
+        { role: "system", content: SYSTEM_PROMPT },
+        { role: "user", content: buildSummaryPrompt(transcript, title) },
+      ],
+      temperature: 0.3,
+    });
 
-          return await reduceSummaries(
-            ollama,
-            model,
-            title,
-            chunks,
-            chunkSummaries
-          );
-        }
-      } catch {
-        // Model failed, fall through to OpenAI or next attempt
-      }
-    }
+    const content = response.choices[0]?.message?.content;
+    if (content) return JSON.parse(content) as SummaryJSON;
+    throw new Error("No content in Ollama response");
   }
 
-  const openai = getOpenAI();
-  const response = await openai.chat.completions.create({
-    model: "gpt-4o-mini",
-    messages: [
-      { role: "system", content: SYSTEM_PROMPT },
-      {
-        role: "user",
-        content: buildSummaryPrompt(transcript, title),
-      },
-    ],
-    temperature: 0.3,
-    response_format: { type: "json_object" },
-  });
+  const chunkSummaries: string[] = [];
+  for (let i = 0; i < chunks.length; i++) {
+    const summary = await summarizeChunk(ollama, model, chunks[i], i, chunks.length);
+    chunkSummaries.push(summary);
+  }
 
-  const content = response.choices[0]?.message?.content;
-  if (!content) throw new Error("No content in OpenAI response");
-
-  return JSON.parse(content) as SummaryJSON;
+  return await reduceSummaries(ollama, model, title, chunks, chunkSummaries);
 }
