@@ -1,35 +1,41 @@
+@import url("https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&display=swap");
 @import "tailwindcss";
 
 :root {
   --background: #0a0a0a;
-  --foreground: #ededed;
+  --surface: #111111;
+  --foreground: #e0e0e0;
+  --accent: #3b82f8;
+  --accent-hover: #60a5fa;
+  --border: #2a2a2a;
 }
 
 body {
   color: var(--foreground);
-  background: var(--background);
-  font-family: "Inter", system-ui, sans-serif;
+  background: radial-gradient(circle at 50% 0%, #0f0f1a 0%, #000 70%);
+  font-family: "JetBrains Mono", monospace;
 }
 
 ::-webkit-scrollbar {
   width: 6px;
 }
 ::-webkit-scrollbar-track {
-  background: transparent;
+  background: var(--background);
 }
 ::-webkit-scrollbar-thumb {
-  background: #333;
+  background: var(--border);
   border-radius: 3px;
 }
 
 .timestamp-link {
-  color: #60a5fa;
+  color: var(--accent);
   cursor: pointer;
   font-size: 0.875rem;
-  font-family:
-    ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono",
-    monospace;
+  font-family: "JetBrains Mono", monospace;
+  text-decoration: none;
+  border-bottom: 1px dotted var(--accent);
 }
 .timestamp-link:hover {
-  color: #93c5fd;
+  color: var(--accent-hover);
+  border-bottom-style: solid;
 }
