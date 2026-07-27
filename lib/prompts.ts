@@ -68,8 +68,8 @@ export function chunkTranscript(transcript: string): string[] {
   while (start < lines.length) {
     const end = Math.min(start + CHUNK_SIZE, lines.length);
     chunks.push(lines.slice(start, end).join("\n"));
+    if (end >= lines.length) break;
     start = end - CHUNK_OVERLAP;
-    if (start >= lines.length) break;
   }
 
   return chunks;
