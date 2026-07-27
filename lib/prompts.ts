@@ -1,4 +1,9 @@
-import { getOllama, getOllamaModel, isOllamaAvailable } from "@/lib/ollama";
+import {
+  getOllama,
+  getOllamaModels,
+  findOllamaModel,
+  isOllamaAvailable,
+} from "@/lib/ollama";
 import { getOpenAI } from "./openai";
 
 export interface SummaryJSON {
@@ -57,21 +62,31 @@ export async function getSummaryFromAI(
   const ollamaAvailable = await isOllamaAvailable();
 
   if (ollamaAvailable) {
-    const ollama = getOllama();
-    const model = getOllamaModel();
-    const response = await ollama.chat.completions.create({
-      model,
-      messages: [
-        { role: "system", content: SYSTEM_PROMPT },
-        { role: "user", content: buildSummaryPrompt(transcript, title) },
-      ],
-      temperature: 0.3,
-    });
+    const model =
+      (process.env.OLLAMA_MODEL as string) ||
+      (await findOllamaModel("llama3.2:3b", ["qwen2.5:7b", "gemma2:2b"]));
 
-    const content = response.choices[0]?.message?.content;
-    if (!content) throw new Error("No content from Ollama");
+    if (model) {
+      const ollama = getOllama();
+      try {
+        const response = await ollama.chat.completions.create({
+          model,
+          messages: [
+            { role: "system", content: SYSTEM_PROMPT },
+            {
+              role: "user",
+              content: buildSummaryPrompt(transcript, title),
+            },
+          ],
+          temperature: 0.3,
+        });
 
-    return JSON.parse(content) as SummaryJSON;
+        const content = response.choices[0]?.message?.content;
+        if (content) return JSON.parse(content) as SummaryJSON;
+      } catch {
+        // Model failed, fall through to OpenAI or next attempt
+      }
+    }
   }
 
   const openai = getOpenAI();
@@ -79,7 +94,10 @@ export async function getSummaryFromAI(
     model: "gpt-4o-mini",
     messages: [
       { role: "system", content: SYSTEM_PROMPT },
-      { role: "user", content: buildSummaryPrompt(transcript, title) },
+      {
+        role: "user",
+        content: buildSummaryPrompt(transcript, title),
+      },
     ],
     temperature: 0.3,
     response_format: { type: "json_object" },
