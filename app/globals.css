@@ -1,4 +1,6 @@
-@import "tailwindcss";
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
 :root {
   --background: #0a0a0a;
@@ -11,7 +13,6 @@ body {
   font-family: "Inter", system-ui, sans-serif;
 }
 
-/* Custom scrollbar */
 ::-webkit-scrollbar {
   width: 6px;
 }
@@ -23,7 +24,6 @@ body {
   border-radius: 3px;
 }
 
-/* Timestamp link styling */
 .timestamp-link {
   @apply text-blue-400 hover:text-blue-300 cursor-pointer text-sm font-mono;
 }
