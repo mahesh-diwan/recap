@@ -107,21 +107,25 @@ export default function Home() {
   return (
     <div className="min-h-screen scanline-overlay relative p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto">
       <div className="fixed inset-0 pointer-events-none overflow-hidden">
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[900px] h-[500px] bg-[#00d4aa] opacity-[0.02] blur-[180px] rounded-full"></div>
-        <div className="absolute bottom-0 left-1/3 w-[500px] h-[350px] bg-[#ffb800] opacity-[0.015] blur-[120px] rounded-full"></div>
-        <div className="absolute top-1/2 left-0 w-[400px] h-[400px] bg-[#4466ff] opacity-[0.01] blur-[150px] rounded-full"></div>
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[1200px] h-[600px] bg-[#0a1e3d] opacity-[0.03] blur-[200px] rounded-full"></div>
+        <div className="absolute bottom-0 left-1/4 w-[600px] h-[400px] bg-[#ffb800] opacity-[0.01] blur-[150px] rounded-full"></div>
+        <div className="absolute top-1/3 right-0 w-[400px] h-[400px] bg-[#00d4aa] opacity-[0.008] blur-[160px] rounded-full"></div>
+        <div className="scan-line"></div>
       </div>
 
       <div className="relative z-10">
         <header className="mb-8 sm:mb-10 pb-4 sm:pb-6 border-b border-[#1a2a3a] flex items-center gap-3 sm:gap-4">
-          <div className="w-9 h-9 sm:w-10 sm:h-10 rounded bg-gradient-to-br from-[#00d4aa] to-[#008866] flex items-center justify-center text-black font-bold text-base sm:text-lg shadow-lg shadow-[#00d4aa]/20">
-            B
+          <div className="relative">
+            <div className="w-10 h-10 sm:w-11 sm:h-11 rounded bg-gradient-to-br from-[#00d4aa] to-[#008866] flex items-center justify-center text-black font-bold text-lg sm:text-xl shadow-lg shadow-[#00d4aa]/20 bat-pulse">
+              B
+            </div>
+            <div className="absolute -inset-1 rounded bg-[#00d4aa] opacity-[0.06] blur-md"></div>
           </div>
           <div className="min-w-0">
-            <h1 className="text-xl sm:text-3xl font-bold tracking-tight font-['Space_Grotesk'] text-[#e8ecf0] truncate">
+            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold tracking-tight font-['Outfit'] text-[#e8ecf0] truncate">
               YOUTUBE SUMMARIZER
             </h1>
-            <p className="text-[10px] sm:text-xs text-[#4a6a7a] mt-0.5 font-mono tracking-widest truncate">
+            <p className="text-[10px] sm:text-xs text-[#4a6a7a] mt-0.5 font-mono tracking-[0.2em] truncate">
               VIDEO INTELLIGENCE INTERFACE v2.1
             </p>
           </div>
@@ -181,7 +185,7 @@ export default function Home() {
         {videoId && summary && (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
             <div className="space-y-3 sm:space-y-4 min-w-0">
-              <div className="aspect-video bg-[#060a0f] overflow-hidden border border-[#1a2a3a] rounded-lg sm:rounded-xl shadow-2xl shadow-black/60 relative glow-cyan vhs-noise">
+              <div className="aspect-video bg-[#060a10] overflow-hidden border border-[#1a2a3a] rounded-lg sm:rounded-xl shadow-2xl shadow-black/60 relative glow-cyan vhs-noise">
                 <iframe
                   ref={playerRef}
                   src={`https://www.youtube.com/embed/${videoId}`}
@@ -192,7 +196,7 @@ export default function Home() {
               </div>
               <div className="flex items-start gap-3 bg-[#0a0e14] border border-[#1a2a3a] rounded-lg p-3 sm:p-4">
                 <div className="w-1 h-full min-h-[40px] sm:min-h-[48px] bg-[#00d4aa] rounded-full shrink-0 opacity-60"></div>
-                <h2 className="text-xs sm:text-sm font-bold text-[#e8ecf0] uppercase tracking-wide font-['Space_Grotesk'] line-clamp-3">
+                <h2 className="text-sm sm:text-base font-bold text-[#e8ecf0] uppercase tracking-wide font-['Outfit'] line-clamp-3">
                   {title}
                 </h2>
               </div>
@@ -228,7 +232,7 @@ export default function Home() {
                     {summary.chapters.map((ch, i) => (
                       <div
                         key={i}
-                        className="p-2 sm:p-3 bg-[#060a0f] hover:bg-[#0f1520] border border-[#1a2a3a] hover:border-[#00d4aa]/30 rounded-lg cursor-pointer transition-colors flex items-start gap-3 group min-h-[44px]"
+                        className="p-2 sm:p-3 bg-[#060a10] hover:bg-[#0f1520] border border-[#1a2a3a] hover:border-[#00d4aa]/30 rounded-lg cursor-pointer transition-colors flex items-start gap-3 group min-h-[44px]"
                         onClick={() => jumpTo(ch.startTime)}
                       >
                         <span className="text-[#00d4aa] text-[10px] sm:text-xs font-mono mt-0.5 shrink-0 opacity-60 group-hover:opacity-100">
