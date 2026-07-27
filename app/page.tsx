@@ -1,21 +1,19 @@
 "use client";
 
-import { useState, useRef, useCallback, useEffect } from "react";
-import { motion, useReducedMotion, stagger } from "motion/react";
+import { useState, useRef, useCallback } from "react";
 import type { SummaryJSON } from "@/lib/prompts";
+
+interface Chapter {
+  title: string;
+  startTime: string;
+  startSeconds: number;
+  summary: string;
+}
 
 function parseTimestampToSeconds(ts: string): number {
   const parts = ts.split(":").map(Number);
   if (parts.length === 3) return parts[0] * 3600 + parts[1] * 60 + parts[2];
   return parts[0] * 60 + parts[1];
-}
-
-function formatTimestamp(seconds: number): string {
-  const h = Math.floor(seconds / 3600);
-  const m = Math.floor((seconds % 3600) / 60);
-  const s = seconds % 60;
-  if (h > 0) return `${h}:${m.toString().padStart(2, "0")}:${s.toString().padStart(2, "0")}`;
-  return `${m}:${s.toString().padStart(2, "0")}`;
 }
 
 export default function Home() {
@@ -27,7 +25,6 @@ export default function Home() {
   const [summary, setSummary] = useState<SummaryJSON | null>(null);
   const [markdown, setMarkdown] = useState("");
   const playerRef = useRef<HTMLIFrameElement>(null);
-  const reduceMotion = useReducedMotion();
 
   const jumpTo = useCallback(
     (timestamp: string) => {
@@ -107,364 +104,237 @@ export default function Home() {
     setError(null);
   };
 
-  const containerVariants = {
-    hidden: { opacity: 0 },
-    visible: { opacity: 1, transition: { staggerChildren: 0.08 } },
-  };
-
-  const itemVariants = {
-    hidden: { opacity: 0, y: 20 },
-    visible: {
-      opacity: 1,
-      y: 0,
-      transition: { duration: 0.5, ease: [0.16, 1, 0.3, 1] },
-    },
-  };
-
   return (
-    <div className="min-h-screen p-6 md:p-10 max-w-7xl mx-auto">
-      {/* Ambient glow - subtle */}
-      <div className="fixed inset-0 pointer-events-none overflow-hidden -z-10">
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[400px] bg-[#3b82f6] opacity-[0.03] blur-[120px] rounded-full" />
-        <div className="absolute bottom-0 left-1/4 w-[300px] h-[200px] bg-[#1e3a5f] opacity-[0.04] blur-[80px] rounded-full" />
+    <div className="min-h-screen scanline-overlay relative p-6 max-w-7xl mx-auto">
+      <div className="fixed inset-0 pointer-events-none overflow-hidden">
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[900px] h-[500px] bg-[#00d4aa] opacity-[0.02] blur-[180px] rounded-full"></div>
+        <div className="absolute bottom-0 left-1/3 w-[500px] h-[350px] bg-[#ffb800] opacity-[0.015] blur-[120px] rounded-full"></div>
       </div>
 
-      {/* Header - Asymmetric layout (no center bias) */}
-      <motion.div
-        initial={reduceMotion ? false : { opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
-        className="mb-12 lg:mb-16"
-      >
-        <div className="max-w-3xl">
-          <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight leading-none mb-4 bg-gradient-to-r from-[#3b82f6] via-[#60a5fa] to-[#93c5fd] bg-clip-text text-transparent">
-            YouTube Summarizer
-          </h1>
-          <p className="text-lg text-zinc-400 max-w-[50ch] leading-relaxed">
-            Paste any YouTube URL. Get structured AI insights with timestamps — TL;DR, chapters, key points, highlights, facts, and action items.
-          </p>
+      <div className="relative z-10">
+        <header className="mb-10 pb-6 border-b border-[#1a2a3a] flex items-center gap-4">
+          <div className="w-10 h-10 rounded bg-gradient-to-br from-[#00d4aa] to-[#008866] flex items-center justify-center text-black font-bold text-lg shadow-lg shadow-[#00d4aa]/20">
+            B
+          </div>
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight font-['Space_Grotesk'] text-[#e8ecf0]">
+              YOUTUBE SUMMARIZER
+            </h1>
+            <p className="text-xs text-[#4a6a7a] mt-1 font-mono tracking-widest">
+              VIDEO INTELLIGENCE INTERFACE v2.1
+            </p>
+          </div>
+        </header>
+
+        <div className="mb-8 max-w-3xl mx-auto">
+          <div className="terminal-border p-1 flex gap-3">
+            <span className="text-[#00d4aa] text-xs font-mono px-3 py-3 border-r border-[#1a2a3a] shrink-0 flex items-center">
+              &gt;_
+            </span>
+            <input
+              type="text"
+              value={url}
+              onChange={(e) => setUrl(e.target.value)}
+              onKeyDown={handleKeyDown}
+              placeholder="Paste YouTube URL and press ENTER"
+              className="flex-1 px-4 py-3 bg-transparent text-[#e8ecf0] placeholder-[#3a4a5a] focus:outline-none font-mono text-sm border-none"
+              disabled={loading}
+            />
+            <button
+              onClick={handleSummarize}
+              disabled={loading || !url.trim()}
+              className="px-6 py-3 bg-[#00d4aa] hover:bg-[#00ffaa] hover:text-black disabled:bg-[#1a2a3a] disabled:text-[#3a4a5a] disabled:cursor-not-allowed text-black font-bold uppercase tracking-wider text-xs font-mono transition-all rounded shadow-lg shadow-[#00d4aa]/10"
+            >
+              {loading ? "ANALYZING" : "EXECUTE"}
+            </button>
+          </div>
         </div>
-      </motion.div>
 
-      {/* URL Input - Split layout */}
-      <motion.div
-        initial={reduceMotion ? false : { opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1], delay: 0.1 }}
-        className="mb-10 lg:mb-14"
-      >
-        <div className="flex gap-3 max-w-3xl">
-          <label htmlFor="url-input" className="sr-only">
-            YouTube URL
-          </label>
-          <input
-            id="url-input"
-            type="text"
-            value={url}
-            onChange={(e) => setUrl(e.target.value)}
-            onKeyDown={handleKeyDown}
-            placeholder="https://youtube.com/watch?v=..."
-            className="flex-1 px-5 py-4 bg-zinc-950/80 border border-zinc-800 text-white placeholder-zinc-600 focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent/30 font-mono text-base rounded-lg transition-all hover:border-zinc-700"
-            disabled={loading}
-            autoComplete="off"
-            autoFocus
-          />
-          <motion.button
-            onClick={handleSummarize}
-            disabled={loading || !url.trim()}
-            whileHover={reduceMotion ? undefined : { scale: 1.02 }}
-            whileTap={reduceMotion ? undefined : { scale: 0.98 }}
-            className="px-8 py-4 bg-accent hover:bg-accent-hover hover:text-black disabled:bg-zinc-800 disabled:cursor-not-allowed disabled:hover:bg-zinc-800 disabled:text-zinc-500 text-black font-bold uppercase tracking-wider border border-accent hover:border-accent-hover rounded-lg transition-all shadow-lg shadow-accent/10 hover:shadow-accent/20 min-w-[160px]"
-          >
-            {loading ? (
-              <span className="flex items-center gap-2">
-                <motion.span
-                  animate={{ rotate: 360 }}
-                  transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-                  className="w-4 h-4 border-2 border-black/30 border-t-black rounded-full"
-                />
-                Processing...
-              </span>
-            ) : (
-              "Summarize"
-            )}
-          </motion.button>
-        </div>
-      </motion.div>
-
-      {/* Error */}
-      {error && (
-        <motion.div
-          initial={{ opacity: 0, y: -10 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="mb-8 max-w-3xl mx-auto p-4 border border-red-900/60 bg-red-950/30 text-red-400 font-mono text-sm rounded-lg"
-          role="alert"
-        >
-          ERROR: {error}
-        </motion.div>
-      )}
-
-      {/* Loading State - Skeletal */}
-      {loading && (
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          className="space-y-4 max-w-3xl mx-auto"
-        >
-          <div className="skeleton h-48 rounded-xl" />
-          <div className="skeleton h-32 rounded-xl" />
-          <div className="skeleton h-32 rounded-xl" />
-          <div className="skeleton h-32 rounded-xl" />
-          <div className="skeleton h-32 rounded-xl" />
-          <div className="skeleton h-32 rounded-xl" />
-          <div className="skeleton h-32 rounded-xl" />
-        </motion.div>
-      )}
-
-      {/* Side-by-side view */}
-      {videoId && summary && (
-        <motion.div
-          initial={reduceMotion ? false : { opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1], delay: 0.15 }}
-          className="grid grid-cols-1 lg:grid-cols-2 gap-8"
-        >
-          {/* Left: Video Player - Media-focused layout */}
-          <div className="space-y-4 lg:sticky lg:top-24">
-            <div className="aspect-video bg-zinc-950 overflow-hidden border border-zinc-800 rounded-xl shadow-xl shadow-black/30 relative">
-              <iframe
-                ref={playerRef}
-                src={`https://www.youtube.com/embed/${videoId}`}
-                className="w-full h-full"
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                allowFullScreen
-                title={title}
-              />
+        {error && (
+          <div className="mb-8 p-4 border border-[#ff3355]/40 bg-[#ff3355]/5 text-[#ff6688] max-w-3xl mx-auto font-mono text-sm flex items-start gap-3 rounded glow-red">
+            <span className="text-[#ffb800] text-lg leading-none mt-0.5">&#9888;</span>
+            <div>
+              <div className="text-[#ffb800] text-xs uppercase tracking-wider mb-1 font-bold">ALERT</div>
+              <span className="text-[#ff8899]">{error}</span>
             </div>
-            <h2 className="text-sm font-semibold text-zinc-300 uppercase tracking-wider line-clamp-2 leading-snug">
-              {title}
-            </h2>
           </div>
+        )}
 
-          {/* Right: Summary Panel - Data-dense layout */}
-          <div className="space-y-5 max-h-[calc(100vh-200px)] overflow-y-auto pr-2 scroll-smooth">
-            {/* Action Bar - Toolbar layout */}
-            <motion.div
-              variants={containerVariants}
-              initial="hidden"
-              animate="visible"
-              className="flex gap-3 sticky top-0 z-10 bg-gradient-to-b from-zinc-950/90 to-transparent pb-4 backdrop-blur-sm -mx-2 px-2"
-            >
-              <motion.button
-                variants={itemVariants}
-                onClick={handleDownload}
-                whileHover={reduceMotion ? undefined : { y: -1 }}
-                whileTap={reduceMotion ? undefined : { scale: 0.98 }}
-                className="flex-1 px-4 py-2.5 bg-zinc-900/80 hover:bg-accent hover:text-black text-zinc-300 font-semibold uppercase tracking-wider border border-zinc-800 hover:border-accent rounded-lg transition-all text-sm shadow-md shadow-black/20 hover:shadow-lg hover:shadow-accent/10 backdrop-blur-sm"
-              >
-                Download Report
-              </motion.button>
-              <motion.button
-                variants={itemVariants}
-                onClick={handleReset}
-                whileHover={reduceMotion ? undefined : { y: -1 }}
-                whileTap={reduceMotion ? undefined : { scale: 0.98 }}
-                className="flex-1 px-4 py-2.5 bg-zinc-900/80 hover:bg-zinc-800 text-zinc-400 hover:text-white font-semibold uppercase tracking-wider border border-zinc-800 rounded-lg transition-all text-sm backdrop-blur-sm"
-              >
-                New Video
-              </motion.button>
-            </motion.div>
-
-            {/* TL;DR - Lead paragraph layout (no eyebrow) */}
-            <motion.section
-              variants={containerVariants}
-              initial="hidden"
-              animate="visible"
-              className="border border-zinc-800 bg-zinc-950/60 rounded-xl p-6 shadow-lg shadow-black/20 surface-glass"
-            >
-              <h3 className="text-base font-bold mb-3 text-accent-hover uppercase tracking-wider">
-                TL;DR
-              </h3>
-              <p className="text-zinc-300 leading-relaxed font-mono text-sm">
-                {summary.tldr}
+        {loading && (
+          <div className="text-center py-20">
+            <div className="inline-block">
+              <div className="w-16 h-16 mx-auto mb-6 border-2 border-[#1a2a3a] border-t-[#00d4aa] rounded-full animate-spin"></div>
+              <p className="text-[#00d4aa] font-bold text-lg font-mono tracking-widest">
+                &gt; SCANNING FEED...
               </p>
-            </motion.section>
-
-            {/* Chapters - Timeline layout */}
-            {summary.chapters.length > 0 && (
-              <motion.section
-                variants={containerVariants}
-                initial="hidden"
-                animate="visible"
-                className="border border-zinc-800 bg-zinc-950/60 rounded-xl p-6 shadow-lg shadow-black/20 surface-glass"
-              >
-                <h3 className="text-base font-bold mb-4 text-accent-hover uppercase tracking-wider">
-                  Chapters
-                </h3>
-                <div className="space-y-2">
-                  {summary.chapters.map((ch, i) => (
-                    <motion.div
-                      key={i}
-                      whileHover={reduceMotion ? undefined : { x: 4 }}
-                      className="group p-4 bg-zinc-950/50 hover:bg-zinc-900/80 border border-zinc-800 hover:border-zinc-700 rounded-lg cursor-pointer transition-all"
-                      onClick={() => jumpTo(ch.startTime)}
-                    >
-                      <div className="flex items-center gap-3 mb-2">
-                        <span className="timestamp-link text-xs px-2 py-0.5 bg-accent-muted/30 rounded border border-accent-muted/50">
-                          {ch.startTime}
-                        </span>
-                        <span className="font-semibold text-zinc-100 text-sm">{ch.title}</span>
-                      </div>
-                      <p className="text-xs text-zinc-500 font-mono pl-9">
-                        {ch.summary}
-                      </p>
-                    </motion.div>
-                  ))}
-                </div>
-              </motion.section>
-            )}
-
-            {/* Key Points - Bullet list layout */}
-            {summary.keyPoints.length > 0 && (
-              <motion.section
-                variants={containerVariants}
-                initial="hidden"
-                animate="visible"
-                className="bg-zinc-950/60 rounded-xl p-6 shadow-lg shadow-black/20 surface-glass border border-zinc-800"
-              >
-                <h3 className="text-base font-bold mb-4 text-accent-hover uppercase tracking-wider">
-                  Key Points
-                </h3>
-                <ul className="space-y-3">
-                  {summary.keyPoints.map((kp, i) => (
-                    <motion.li
-                      key={i}
-                      whileHover={reduceMotion ? undefined : { x: 4 }}
-                      className="flex gap-3 text-zinc-300 font-mono text-sm cursor-pointer group"
-                      onClick={() => jumpTo(kp.timestamp)}
-                    >
-                      <span className="text-accent shrink-0 mt-0.5 group-hover:scale-110 transition-transform">
-                        ▸
-                      </span>
-                      <span
-                        className="timestamp-link shrink-0 px-2 py-0.5 bg-accent-muted/30 rounded border border-accent-muted/50"
-                      >
-                        [{kp.timestamp}]
-                      </span>
-                      <span className="group-hover:text-white transition-colors">{kp.point}</span>
-                    </motion.li>
-                  ))}
-                </ul>
-              </motion.section>
-            )}
-
-            {/* Highlights - Quote card layout */}
-            {summary.highlights.length > 0 && (
-              <motion.section
-                variants={containerVariants}
-                initial="hidden"
-                animate="visible"
-                className="bg-zinc-950/60 rounded-xl p-6 shadow-lg shadow-black/20 surface-glass border border-zinc-800"
-              >
-                <h3 className="text-base font-bold mb-4 text-accent-hover uppercase tracking-wider">
-                  Highlights
-                </h3>
-                <div className="space-y-4">
-                  {summary.highlights.map((h, i) => (
-                    <motion.blockquote
-                      key={i}
-                      whileHover={reduceMotion ? undefined : { x: 4 }}
-                      className="pl-4 border-l-2 border-accent/50 rounded-r-md bg-zinc-950/50 p-4 hover:border-accent transition-colors"
-                    >
-                      <p className="text-zinc-200 font-mono text-sm italic leading-relaxed">
-                        &ldquo;{h.quote}&rdquo;
-                      </p>
-                      <div className="flex items-center gap-3 mt-3">
-                        <span
-                          className="timestamp-link text-xs px-2 py-0.5 bg-accent-muted/30 rounded border border-accent-muted/50"
-                        >
-                          [{h.timestamp}]
-                        </span>
-                        <p className="text-xs text-zinc-500 font-mono">
-                          {h.context}
-                        </p>
-                      </div>
-                    </motion.blockquote>
-                  ))}
-                </div>
-              </motion.section>
-            )}
-
-            {/* Facts - Numbered data layout */}
-            {summary.facts.length > 0 && (
-              <motion.section
-                variants={containerVariants}
-                initial="hidden"
-                animate="visible"
-                className="bg-zinc-950/60 rounded-xl p-6 shadow-lg shadow-black/20 surface-glass border border-zinc-800"
-              >
-                <h3 className="text-base font-bold mb-4 text-accent-hover uppercase tracking-wider">
-                  Facts
-                </h3>
-                <ul className="space-y-3">
-                  {summary.facts.map((f, i) => (
-                    <motion.li
-                      key={i}
-                      whileHover={reduceMotion ? undefined : { x: 4 }}
-                      className="flex gap-3 text-zinc-300 font-mono text-sm cursor-pointer group"
-                      onClick={() => jumpTo(f.timestamp)}
-                    >
-                      <span className="text-accent shrink-0 font-bold w-6 text-right group-hover:scale-110 transition-transform">
-                        {i + 1}.
-                      </span>
-                      <span
-                        className="timestamp-link shrink-0 px-2 py-0.5 bg-accent-muted/30 rounded border border-accent-muted/50"
-                      >
-                        [{f.timestamp}]
-                      </span>
-                      <span className="group-hover:text-white transition-colors">{f.fact}</span>
-                    </motion.li>
-                  ))}
-                </ul>
-              </motion.section>
-            )}
-
-            {/* Action Items - Checkbox task layout */}
-            {summary.actionItems.length > 0 && (
-              <motion.section
-                variants={containerVariants}
-                initial="hidden"
-                animate="visible"
-                className="bg-zinc-950/60 rounded-xl p-6 shadow-lg shadow-black/20 surface-glass border border-zinc-800"
-              >
-                <h3 className="text-base font-bold mb-4 text-accent-hover uppercase tracking-wider">
-                  Action Items
-                </h3>
-                <ul className="space-y-3">
-                  {summary.actionItems.map((a, i) => (
-                    <motion.li
-                      key={i}
-                      whileHover={reduceMotion ? undefined : { x: 4 }}
-                      className="flex gap-3 text-zinc-300 font-mono text-sm cursor-pointer group"
-                      onClick={() => jumpTo(a.timestamp)}
-                    >
-                      <span className="text-accent shrink-0 mt-0.5 group-hover:scale-110 transition-transform">
-                        ☐
-                      </span>
-                      <span
-                        className="timestamp-link shrink-0 px-2 py-0.5 bg-accent-muted/30 rounded border border-accent-muted/50"
-                      >
-                        [{a.timestamp}]
-                      </span>
-                      <span className="group-hover:text-white transition-colors">{a.action}</span>
-                    </motion.li>
-                  ))}
-                </ul>
-              </motion.section>
-            )}
+              <p className="text-[#3a4a5a] mt-3 text-xs font-mono">
+                Extracting transcript &amp; generating intelligence
+              </p>
+              <div className="mt-6 w-64 h-1 bg-[#1a2a3a] rounded-full overflow-hidden mx-auto">
+                <div className="h-full rounded-full progress-animated" style={{ width: "60%" }}></div>
+              </div>
+            </div>
           </div>
-        </motion.div>
-      )}
+        )}
+
+        {videoId && summary && (
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className="space-y-4">
+              <div className="aspect-video bg-[#060a0f] overflow-hidden border border-[#1a2a3a] rounded-xl shadow-2xl shadow-black/60 relative glow-cyan">
+                <iframe
+                  ref={playerRef}
+                  src={`https://www.youtube.com/embed/${videoId}`}
+                  className="w-full h-full"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                  allowFullScreen
+                />
+              </div>
+              <div className="flex items-start gap-3 bg-[#0a0e14] border border-[#1a2a3a] rounded-lg p-4">
+                <div className="w-1 h-full min-h-[48px] bg-[#00d4aa] rounded-full shrink-0 opacity-60"></div>
+                <h2 className="text-sm font-bold text-[#e8ecf0] uppercase tracking-wide font-['Space_Grotesk'] line-clamp-3">
+                  {title}
+                </h2>
+              </div>
+            </div>
+
+            <div className="space-y-5 max-h-[calc(100vh-220px)] overflow-y-auto pr-1 scroll-smooth">
+              <div className="flex gap-3">
+                <button
+                  onClick={handleDownload}
+                  className="flex-1 px-4 py-2.5 bg-[#0f1520] hover:bg-[#111923] text-[#00d4aa] font-bold uppercase tracking-wider border border-[#1a2a3a] hover:border-[#00d4aa]/40 rounded-lg transition-all text-xs font-mono shadow-md shadow-black/20"
+                >
+                  &#8615; EXPORT MD
+                </button>
+                <button
+                  onClick={handleReset}
+                  className="flex-1 px-4 py-2.5 bg-[#0f1520] hover:bg-[#1a2a3a] text-[#4a6a7a] hover:text-[#c8cdd4] font-bold uppercase tracking-wider border border-[#1a2a3a] rounded-lg transition-all text-xs font-mono"
+                >
+                  RESET
+                </button>
+              </div>
+
+              <section className="panel glow-cyan">
+                <h3 className="section-label">TL;DR</h3>
+                <p className="text-[#c8cdd4] leading-relaxed font-mono text-sm">
+                  {summary.tldr}
+                </p>
+              </section>
+
+              {summary.chapters.length > 0 && (
+                <section className="panel">
+                  <h3 className="section-label">CHAPTERS</h3>
+                  <div className="space-y-1">
+                    {summary.chapters.map((ch, i) => (
+                      <div
+                        key={i}
+                        className="p-3 bg-[#060a0f] hover:bg-[#0f1520] border border-[#1a2a3a] hover:border-[#00d4aa]/30 rounded-lg cursor-pointer transition-colors flex items-start gap-3 group"
+                        onClick={() => jumpTo(ch.startTime)}
+                      >
+                        <span className="text-[#00d4aa] text-xs font-mono mt-0.5 shrink-0 opacity-60 group-hover:opacity-100">
+                          [{ch.startTime}]
+                        </span>
+                        <div className="min-w-0">
+                          <div className="text-[#e8ecf0] text-sm font-bold truncate">{ch.title}</div>
+                          <p className="text-[#3a5a6a] text-xs font-mono mt-1 line-clamp-2">{ch.summary}</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </section>
+              )}
+
+              {summary.keyPoints.length > 0 && (
+                <section className="panel">
+                  <h3 className="section-label">KEY POINTS</h3>
+                  <ul className="space-y-3">
+                    {summary.keyPoints.map((kp, i) => (
+                      <li key={i} className="flex gap-3 text-[#c8cdd4] font-mono text-sm">
+                        <span className="text-[#00d4aa] shrink-0 mt-1">&#9656;</span>
+                        <span
+                          className="timestamp-link shrink-0"
+                          onClick={() => jumpTo(kp.timestamp)}
+                        >
+                          [{kp.timestamp}]
+                        </span>
+                        <span>{kp.point}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </section>
+              )}
+
+              {summary.highlights.length > 0 && (
+                <section className="panel glow-amber">
+                  <h3 className="section-label" style={{ color: "var(--amber)" }}>
+                    HIGHLIGHTS
+                  </h3>
+                  <div className="space-y-4">
+                    {summary.highlights.map((h, i) => (
+                      <blockquote
+                        key={i}
+                        className="pl-4 border-l-2 border-[#ffb800] rounded-r-md"
+                      >
+                        <p className="text-[#c8cdd4] font-mono text-sm italic">
+                          &ldquo;{h.quote}&rdquo;
+                        </p>
+                        <div className="flex items-center gap-3 mt-2">
+                          <span
+                            className="timestamp-link text-xs"
+                            onClick={() => jumpTo(h.timestamp)}
+                          >
+                            [{h.timestamp}]
+                          </span>
+                          <span className="text-[#3a5a6a] text-xs font-mono">{h.context}</span>
+                        </div>
+                      </blockquote>
+                    ))}
+                  </div>
+                </section>
+              )}
+
+              {summary.facts.length > 0 && (
+                <section className="panel">
+                  <h3 className="section-label">FACTS</h3>
+                  <ul className="space-y-3">
+                    {summary.facts.map((f, i) => (
+                      <li key={i} className="flex gap-3 text-[#c8cdd4] font-mono text-sm">
+                        <span className="text-[#ffb800] shrink-0 font-bold text-xs mt-1">{i + 1}.</span>
+                        <span
+                          className="timestamp-link shrink-0"
+                          onClick={() => jumpTo(f.timestamp)}
+                        >
+                          [{f.timestamp}]
+                        </span>
+                        <span>{f.fact}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </section>
+              )}
+
+              {summary.actionItems.length > 0 && (
+                <section className="panel">
+                  <h3 className="section-label">ACTION ITEMS</h3>
+                  <ul className="space-y-3">
+                    {summary.actionItems.map((a, i) => (
+                      <li key={i} className="flex gap-3 text-[#c8cdd4] font-mono text-sm">
+                        <span className="text-[#ffb800] shrink-0 mt-1">&#9744;</span>
+                        <span
+                          className="timestamp-link shrink-0"
+                          onClick={() => jumpTo(a.timestamp)}
+                        >
+                          [{a.timestamp}]
+                        </span>
+                        <span>{a.action}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </section>
+              )}
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
