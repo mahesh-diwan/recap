@@ -1,3 +1,4 @@
+import { getOllama, getOllamaModel, isOllamaAvailable } from "@/lib/ollama";
 import { getOpenAI } from "./openai";
 
 export interface SummaryJSON {
@@ -53,6 +54,26 @@ export async function getSummaryFromAI(
   transcript: string,
   title: string
 ): Promise<SummaryJSON> {
+  const ollamaAvailable = await isOllamaAvailable();
+
+  if (ollamaAvailable) {
+    const ollama = getOllama();
+    const model = getOllamaModel();
+    const response = await ollama.chat.completions.create({
+      model,
+      messages: [
+        { role: "system", content: SYSTEM_PROMPT },
+        { role: "user", content: buildSummaryPrompt(transcript, title) },
+      ],
+      temperature: 0.3,
+    });
+
+    const content = response.choices[0]?.message?.content;
+    if (!content) throw new Error("No content from Ollama");
+
+    return JSON.parse(content) as SummaryJSON;
+  }
+
   const openai = getOpenAI();
   const response = await openai.chat.completions.create({
     model: "gpt-4o-mini",
@@ -69,5 +90,3 @@ export async function getSummaryFromAI(
 
   return JSON.parse(content) as SummaryJSON;
 }
-
-
