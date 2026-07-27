@@ -1,21 +1,13 @@
 "use client";
 
 import { useState, useRef, useCallback } from "react";
+import type { SummaryJSON } from "@/lib/prompts";
 
 interface Chapter {
   title: string;
   startTime: string;
   startSeconds: number;
   summary: string;
-}
-
-interface SummaryJSON {
-  tldr: string;
-  chapters: Chapter[];
-  keyPoints: { point: string; timestamp: string }[];
-  highlights: { quote: string; timestamp: string; context: string }[];
-  facts: { fact: string; timestamp: string }[];
-  actionItems: { action: string; timestamp: string }[];
 }
 
 function parseTimestampToSeconds(ts: string): number {
@@ -102,6 +94,15 @@ export default function Home() {
     if (e.key === "Enter") handleSummarize();
   };
 
+  const handleReset = () => {
+    setUrl("");
+    setVideoId(null);
+    setTitle("");
+    setSummary(null);
+    setMarkdown("");
+    setError(null);
+  };
+
   return (
     <div className="min-h-screen p-6 max-w-7xl mx-auto">
       {/* Header */}
@@ -174,6 +175,14 @@ export default function Home() {
               className="w-full px-4 py-2 bg-green-600 hover:bg-green-700 text-white font-medium rounded-lg transition-colors"
             >
               Download Report (.md)
+            </button>
+
+            {/* Reset Button */}
+            <button
+              onClick={handleReset}
+              className="w-full px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white font-medium rounded-lg transition-colors"
+            >
+              Summarize Another Video
             </button>
 
             {/* TL;DR */}

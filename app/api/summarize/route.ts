@@ -14,6 +14,13 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    if (transcript.length > 100000) {
+      return NextResponse.json(
+        { error: "Transcript too long. Please use a shorter video." },
+        { status: 400 }
+      );
+    }
+
     const cached = await prisma.summaryCache.findUnique({
       where: { videoId },
     });
@@ -28,8 +35,13 @@ export async function POST(request: NextRequest) {
     const summary = await getSummaryFromAI(transcript, title || "Untitled Video");
     const markdown = summaryToMarkdown(summary, title || "Untitled Video", thumbnail || "", videoId);
 
-    await prisma.summaryCache.create({
-      data: {
+    await prisma.summaryCache.upsert({
+      where: { videoId },
+      update: {
+        summary: JSON.stringify(summary),
+        markdown,
+      },
+      create: {
         videoId,
         title: title || "Untitled Video",
         thumbnail: thumbnail || "",

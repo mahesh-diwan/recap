@@ -70,4 +70,4 @@ export async function getSummaryFromAI(
   return JSON.parse(content) as SummaryJSON;
 }
 
-export { SYSTEM_PROMPT };
+
