@@ -4,6 +4,7 @@
 :root {
   --background: #0a0a0a;
   --surface: #111111;
+  --surface-2: #1a1a2e;
   --foreground: #e0e0e0;
   --accent: #3b82f8;
   --accent-hover: #60a5fa;
@@ -26,6 +27,9 @@ body {
   background: var(--border);
   border-radius: 3px;
 }
+::-webkit-scrollbar-thumb:hover {
+  background: #444;
+}
 
 .timestamp-link {
   color: var(--accent);
@@ -34,6 +38,9 @@ body {
   font-family: "JetBrains Mono", monospace;
   text-decoration: none;
   border-bottom: 1px dotted var(--accent);
+  transition:
+    color 0.2s ease,
+    border-bottom-style 0.2s ease;
 }
 .timestamp-link:hover {
   color: var(--accent-hover);
