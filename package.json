@@ -9,7 +9,6 @@
     "lint": "eslint"
   },
   "dependencies": {
-    "@prisma/client": "^6.19.3",
     "motion": "^12.42.2",
     "next": "16.2.12",
     "openai": "^6.49.0",
@@ -24,7 +23,6 @@
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "16.2.12",
-    "prisma": "^6.19.3",
     "tailwindcss": "^4",
     "typescript": "^5"
   }

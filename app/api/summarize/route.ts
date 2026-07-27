@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/db";
 import { getSummaryFromAI, SummaryJSON } from "@/lib/prompts";
 import { summaryToMarkdown } from "@/lib/markdown";
+import { getCachedSummary, getCachedMarkdown, setCachedSummary } from "@/lib/cache";
 
 export async function POST(request: NextRequest) {
   try {
@@ -21,35 +21,19 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const cached = await prisma.summaryCache.findUnique({
-      where: { videoId },
-    });
+    const cached = getCachedSummary(videoId);
 
     if (cached) {
       return NextResponse.json({
-        summary: JSON.parse(cached.summary) as SummaryJSON,
-        markdown: cached.markdown,
+        summary: JSON.parse(cached) as SummaryJSON,
+        markdown: getCachedMarkdown(videoId) || "",
       });
     }
 
     const summary = await getSummaryFromAI(transcript, title || "Untitled Video");
     const markdown = summaryToMarkdown(summary, title || "Untitled Video", thumbnail || "", videoId);
 
-    await prisma.summaryCache.upsert({
-      where: { videoId },
-      update: {
-        summary: JSON.stringify(summary),
-        markdown,
-      },
-      create: {
-        videoId,
-        title: title || "Untitled Video",
-        thumbnail: thumbnail || "",
-        transcript,
-        summary: JSON.stringify(summary),
-        markdown,
-      },
-    });
+    setCachedSummary(videoId, title || "Untitled Video", thumbnail || "", transcript, JSON.stringify(summary), markdown);
 
     return NextResponse.json({ summary, markdown });
   } catch (error: any) {
