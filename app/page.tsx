@@ -16,14 +16,24 @@ function parseTimestampToSeconds(ts: string): number {
   return parts[0] * 60 + parts[1];
 }
 
+function formatTranscript(raw: string): string[] {
+  return raw
+    .split("\n")
+    .map((line) => line.trim())
+    .filter((line) => line.length > 0);
+}
+
 export default function Home() {
   const [url, setUrl] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [videoId, setVideoId] = useState<string | null>(null);
   const [title, setTitle] = useState("");
+  const [thumbnail, setThumbnail] = useState("");
+  const [transcript, setTranscript] = useState<string>("");
   const [summary, setSummary] = useState<SummaryJSON | null>(null);
   const [markdown, setMarkdown] = useState("");
+  const [showTranscript, setShowTranscript] = useState(false);
   const playerRef = useRef<HTMLIFrameElement>(null);
 
   const jumpTo = useCallback(
@@ -42,6 +52,8 @@ export default function Home() {
     setError(null);
     setSummary(null);
     setMarkdown("");
+    setTranscript("");
+    setShowTranscript(false);
 
     try {
       const transcriptRes = await fetch("/api/transcript", {
@@ -58,6 +70,9 @@ export default function Home() {
       const transcriptData = await transcriptRes.json();
       setVideoId(transcriptData.videoId);
       setTitle(transcriptData.title);
+      setThumbnail(transcriptData.thumbnail || "");
+      setTranscript(transcriptData.transcript || "");
+      setShowTranscript(true);
 
       const summaryRes = await fetch("/api/summarize", {
         method: "POST",
@@ -73,6 +88,7 @@ export default function Home() {
       const summaryData = await summaryRes.json();
       setSummary(summaryData.summary);
       setMarkdown(summaryData.markdown);
+      setShowTranscript(true);
     } catch (err: any) {
       setError(err.message || "Something went wrong");
     } finally {
@@ -99,10 +115,15 @@ export default function Home() {
     setUrl("");
     setVideoId(null);
     setTitle("");
+    setThumbnail("");
+    setTranscript("");
     setSummary(null);
     setMarkdown("");
     setError(null);
+    setShowTranscript(false);
   };
+
+  const transcriptLines = formatTranscript(transcript);
 
   return (
     <div className="min-h-screen scanline-overlay relative p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto">
@@ -179,6 +200,46 @@ export default function Home() {
                 <div className="h-full rounded-full progress-animated" style={{ width: "60%" }}></div>
               </div>
             </div>
+          </div>
+        )}
+
+        {transcript && showTranscript && (
+          <div className="mb-6 sm:mb-8 max-w-3xl mx-auto">
+            <button
+              onClick={() => setShowTranscript(!showTranscript)}
+              className="flex items-center gap-2 text-[#4a6a7a] hover:text-[#00d4aa] transition-colors text-xs font-mono uppercase tracking-wider mb-3 cursor-pointer"
+            >
+              <span className={`transition-transform duration-300 ${showTranscript ? "rotate-90" : ""}`}>
+                &#9656;
+              </span>
+              RAW TRANSCRIPT ({transcriptLines.length} lines)
+            </button>
+            {showTranscript && (
+              <div className="panel glow-cyan vhs-noise p-3 sm:p-4 max-h-[300px] overflow-y-auto scroll-smooth">
+                <div className="font-mono text-xs sm:text-sm leading-[1.8] tracking-wide">
+                  {transcriptLines.map((line, i) => {
+                    const match = line.match(/^(\[(\d{2}:\d{2})\])\s*(.*)/);
+                    if (match) {
+                      return (
+                        <div key={i} className="flex gap-2 sm:gap-3">
+                          <span className="text-[#00d4aa] shrink-0 opacity-60">
+                            {match[1]}
+                          </span>
+                          <span className="text-[#c8cdd4] break-words">
+                            {match[3]}
+                          </span>
+                        </div>
+                      );
+                    }
+                    return (
+                      <div key={i} className="text-[#3a5a6a] break-words">
+                        {line}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
           </div>
         )}
 
