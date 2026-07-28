@@ -1,15 +1,5 @@
 # dependencies
 /node_modules
-/.pnp
-.pnp.*
-.yarn/*
-!.yarn/patches
-!.yarn/plugins
-!.yarn/releases
-!.yarn/versions
-
-# testing
-/coverage
 
 # next.js
 /.next/
@@ -29,7 +19,9 @@ yarn-error.log*
 .pnpm-debug.log*
 
 # env files
-.env*.local
+.env
+.env.*
+!.env.example
 
 # typescript
 *.tsbuildinfo
@@ -38,12 +30,11 @@ next-env.d.ts
 # vercel
 .vercel
 
-# typescript
-*.tsbuildinfo
-next-env.d.ts
-
 # cache
 data/cache.json
 
 # playwright
 .playwright-mcp/
+
+# superpowers (internal dev tooling)
+.superpowers/
