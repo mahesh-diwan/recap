@@ -51,23 +51,5 @@ export function summaryToMarkdown(
     }
   }
 
-  if (summary.facts.length > 0) {
-    lines.push("## Facts");
-    lines.push("");
-    for (const f of summary.facts) {
-      lines.push(`- **[${f.timestamp}]** ${f.fact}`);
-    }
-    lines.push("");
-  }
-
-  if (summary.actionItems.length > 0) {
-    lines.push("## Action Items");
-    lines.push("");
-    for (const a of summary.actionItems) {
-      lines.push(`- [ ] **[${a.timestamp}]** ${a.action}`);
-    }
-    lines.push("");
-  }
-
   return lines.join("\n");
 }

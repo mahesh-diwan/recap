@@ -1,43 +1,37 @@
-import { describe, it, expect, afterEach, beforeEach } from "vitest";
+import { describe, it, expect, afterEach } from "vitest";
 import { randomUUID } from "node:crypto";
-import { unlinkSync, existsSync, writeFileSync, mkdirSync } from "node:fs";
+import { unlinkSync, existsSync } from "node:fs";
 import { join } from "node:path";
 
 describe("extractVideoId", () => {
-  const { extractVideoId } = {} as any;
-
   it("extracts from youtube.com/watch?v=", async () => {
-    const mod = await import("@/app/api/transcript/route.ts");
-    const id = mod.extractVideoId("https://www.youtube.com/watch?v=dQw4w9WgXcQ");
-    expect(id).toBe("dQw4w9WgXcQ");
+    const { extractVideoId } = await import("@/lib/youtube");
+    expect(extractVideoId("https://www.youtube.com/watch?v=dQw4w9WgXcQ")).toBe("dQw4w9WgXcQ");
   });
 
   it("extracts from youtu.be/", async () => {
-    const mod = await import("@/app/api/transcript/route.ts");
-    const id = mod.extractVideoId("https://youtu.be/dQw4w9WgXcQ");
-    expect(id).toBe("dQw4w9WgXcQ");
+    const { extractVideoId } = await import("@/lib/youtube");
+    expect(extractVideoId("https://youtu.be/dQw4w9WgXcQ")).toBe("dQw4w9WgXcQ");
   });
 
   it("extracts from youtube.com/embed/", async () => {
-    const mod = await import("@/app/api/transcript/route.ts");
-    const id = mod.extractVideoId("https://www.youtube.com/embed/dQw4w9WgXcQ");
-    expect(id).toBe("dQw4w9WgXcQ");
+    const { extractVideoId } = await import("@/lib/youtube");
+    expect(extractVideoId("https://www.youtube.com/embed/dQw4w9WgXcQ")).toBe("dQw4w9WgXcQ");
   });
 
   it("accepts bare video ID", async () => {
-    const mod = await import("@/app/api/transcript/route.ts");
-    const id = mod.extractVideoId("dQw4w9WgXcQ");
-    expect(id).toBe("dQw4w9WgXcQ");
+    const { extractVideoId } = await import("@/lib/youtube");
+    expect(extractVideoId("dQw4w9WgXcQ")).toBe("dQw4w9WgXcQ");
   });
 
   it("returns null for invalid URL", async () => {
-    const mod = await import("@/app/api/transcript/route.ts");
-    expect(mod.extractVideoId("not-a-url")).toBeNull();
+    const { extractVideoId } = await import("@/lib/youtube");
+    expect(extractVideoId("not-a-url")).toBeNull();
   });
 
   it("returns null for empty string", async () => {
-    const mod = await import("@/app/api/transcript/route.ts");
-    expect(mod.extractVideoId("")).toBeNull();
+    const { extractVideoId } = await import("@/lib/youtube");
+    expect(extractVideoId("")).toBeNull();
   });
 });
 
@@ -90,8 +84,6 @@ describe("summaryToMarkdown", () => {
       chapters: [],
       keyPoints: [],
       highlights: [],
-      facts: [],
-      actionItems: [],
     };
     const md = summaryToMarkdown(summary, "Test Video", "thumb.jpg", "abc123");
     expect(md).toContain("# Test Video");
@@ -99,15 +91,13 @@ describe("summaryToMarkdown", () => {
     expect(md).toContain("A test video summary.");
   });
 
-  it("formats chapters, key points, highlights, facts, action items", async () => {
+  it("formats chapters, key points, highlights", async () => {
     const { summaryToMarkdown } = await import("@/lib/markdown");
     const summary = {
       tldr: "Summary",
       chapters: [{ title: "Intro", startTime: "00:00", startSeconds: 0, summary: "Opening" }],
       keyPoints: [{ point: "Key point", timestamp: "00:30" }],
       highlights: [{ quote: "Quote", timestamp: "00:45", context: "Context" }],
-      facts: [{ fact: "Fact", timestamp: "01:00" }],
-      actionItems: [{ action: "Action", timestamp: "02:00" }],
     };
     const md = summaryToMarkdown(summary, "Test", "t.jpg", "id");
     expect(md).toContain("## Chapters");
@@ -115,17 +105,13 @@ describe("summaryToMarkdown", () => {
     expect(md).toContain("Intro");
     expect(md).toContain("## Key Points");
     expect(md).toContain("## Highlights");
-    expect(md).toContain("## Facts");
-    expect(md).toContain("## Action Items");
     expect(md).toContain("Key point");
     expect(md).toContain("Quote");
-    expect(md).toContain("Fact");
-    expect(md).toContain("Action");
   });
 
   it("handles empty arrays gracefully", async () => {
     const { summaryToMarkdown } = await import("@/lib/markdown");
-    const empty = { tldr: "Empty", chapters: [], keyPoints: [], highlights: [], facts: [], actionItems: [] };
+    const empty = { tldr: "Empty", chapters: [], keyPoints: [], highlights: [] };
     const md = summaryToMarkdown(empty, "Test", "t.jpg", "id");
     expect(md).toContain("## TL;DR");
     expect(md).not.toContain("## Chapters");
@@ -133,7 +119,7 @@ describe("summaryToMarkdown", () => {
 
   it("includes YouTube link with video ID", async () => {
     const { summaryToMarkdown } = await import("@/lib/markdown");
-    const empty = { tldr: "", chapters: [], keyPoints: [], highlights: [], facts: [], actionItems: [] };
+    const empty = { tldr: "", chapters: [], keyPoints: [], highlights: [] };
     const md = summaryToMarkdown(empty, "Test", "t.jpg", "abc123");
     expect(md).toContain("youtube.com/watch?v=abc123");
   });

@@ -1,9 +1,6 @@
 import { readFileSync, writeFileSync, existsSync, mkdirSync } from "fs";
 import { join } from "path";
 
-const CACHE_DIR = join(process.cwd(), "data");
-const CACHE_FILE = join(CACHE_DIR, "cache.json");
-
 interface CacheEntry {
   videoId: string;
   title: string;
@@ -14,16 +11,22 @@ interface CacheEntry {
   createdAt: string;
 }
 
-function ensureCacheDir() {
-  if (!existsSync(CACHE_DIR)) {
-    mkdirSync(CACHE_DIR, { recursive: true });
+function getCachePath(cacheDir?: string) {
+  const dir = cacheDir || join(process.cwd(), "data");
+  return { dir, file: join(dir, "cache.json") };
+}
+
+function ensureCacheDir(dir: string) {
+  if (!existsSync(dir)) {
+    mkdirSync(dir, { recursive: true });
   }
 }
 
-function readCache(): Map<string, CacheEntry> {
-  if (!existsSync(CACHE_FILE)) return new Map();
+function readCache(cacheDir?: string): Map<string, CacheEntry> {
+  const { file } = getCachePath(cacheDir);
+  if (!existsSync(file)) return new Map();
   try {
-    const raw = readFileSync(CACHE_FILE, "utf-8");
+    const raw = readFileSync(file, "utf-8");
     const entries: CacheEntry[] = JSON.parse(raw);
     return new Map(entries.map((e) => [e.videoId, e]));
   } catch {
@@ -31,21 +34,22 @@ function readCache(): Map<string, CacheEntry> {
   }
 }
 
-function writeCache(cache: Map<string, CacheEntry>) {
-  ensureCacheDir();
+function writeCache(cache: Map<string, CacheEntry>, cacheDir?: string) {
+  const { dir, file } = getCachePath(cacheDir);
+  ensureCacheDir(dir);
   const entries = Array.from(cache.values());
-  writeFileSync(CACHE_FILE, JSON.stringify(entries, null, 2), "utf-8");
+  writeFileSync(file, JSON.stringify(entries, null, 2), "utf-8");
 }
 
-export function getCachedSummary(videoId: string): string | null {
-  const cache = readCache();
+export function getCachedSummary(videoId: string, cacheDir?: string): string | null {
+  const cache = readCache(cacheDir);
   const entry = cache.get(videoId);
   if (!entry) return null;
   return entry.summary;
 }
 
-export function getCachedMarkdown(videoId: string): string | null {
-  const cache = readCache();
+export function getCachedMarkdown(videoId: string, cacheDir?: string): string | null {
+  const cache = readCache(cacheDir);
   const entry = cache.get(videoId);
   if (!entry) return null;
   return entry.markdown;
@@ -57,9 +61,10 @@ export function setCachedSummary(
   thumbnail: string,
   transcript: string,
   summary: string,
-  markdown: string
+  markdown: string,
+  cacheDir?: string
 ): void {
-  const cache = readCache();
+  const cache = readCache(cacheDir);
   cache.set(videoId, {
     videoId,
     title,
@@ -69,5 +74,5 @@ export function setCachedSummary(
     markdown,
     createdAt: new Date().toISOString(),
   });
-  writeCache(cache);
+  writeCache(cache, cacheDir);
 }
