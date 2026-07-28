@@ -1,7 +1,7 @@
 import OpenAI from "openai";
 
 let client: OpenAI | null = null;
-let availableModels: string[] = [];
+let availableModels: string[] | null = null;
 
 export function getOllama(): OpenAI {
   if (!client) {
@@ -15,7 +15,7 @@ export function getOllama(): OpenAI {
 }
 
 export async function getOllamaModels(): Promise<string[]> {
-  if (availableModels) return availableModels;
+  if (availableModels !== null) return availableModels;
   try {
     const res = await fetch("http://localhost:11434/api/tags", {
       signal: AbortSignal.timeout(3000),
