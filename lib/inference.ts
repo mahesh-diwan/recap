@@ -85,9 +85,6 @@ export async function summarize(
   transcript: string,
   title: string
 ): Promise<SummaryJSON> {
-  const available = await isOllamaAvailable();
-  if (!available) throw new Error("Ollama not running. Start with: ollama serve");
-
   const model = await resolveModel();
   if (!model) throw new Error("No Ollama model found. Run: ollama pull qwen2.5:1.5b");
 
@@ -104,9 +101,6 @@ export async function* summarizeStream(
   transcript: string,
   title: string
 ): AsyncGenerator<string, void, unknown> {
-  const available = await isOllamaAvailable();
-  if (!available) throw new Error("Ollama not running. Start with: ollama serve");
-
   const model = await resolveModel();
   if (!model) throw new Error("No Ollama model found. Run: ollama pull qwen2.5:1.5b");
 

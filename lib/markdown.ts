@@ -18,7 +18,7 @@ export function summaryToMarkdown(
 
   lines.push("## TL;DR");
   lines.push("");
-  lines.push(summary.tldr);
+  lines.push(summary.tldr || "");
   lines.push("");
 
   if (summary.chapters.length > 0) {

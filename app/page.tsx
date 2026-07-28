@@ -568,7 +568,7 @@ export default function Home() {
                               {summary.keyPoints?.map((kp, i) => (
                                 <li key={i} className="flex gap-3 py-2" style={{ fontSize: 13, lineHeight: 1.55, borderBottom: i < (summary.keyPoints?.length ?? 0) - 1 ? "1px solid var(--border-subtle)" : "none" }}>
                                   <span className="shrink-0 mt-1.5" style={{ width: 5, height: 5, borderRadius: "50%", background: "var(--accent)", opacity: 0.5 }} />
-                                  <button className="timestamp-link shrink-0">{kp.timestamp}</button>
+                                   <button className="timestamp-link shrink-0" onClick={() => jumpTo(kp.timestamp)}>{kp.timestamp}</button>
                                   <span style={{ opacity: 0.9 }}>{kp.point}</span>
                                 </li>
                               ))}
