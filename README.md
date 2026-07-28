@@ -25,8 +25,6 @@ Recap is a local-first YouTube video summarizer. It fetches a video's transcript
 
 Paste a YouTube URL, get a structured summary. Try the [live demo](https://mahesh-diwan.github.io/recap/) to see a pre-cached example.
 
-![Summary View](docs/screenshot-summary.png)
-
 ## Quick Start (No Ollama Required)
 
 You can run Recap and try the demo feature without installing Ollama:
