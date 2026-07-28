@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Recap — AI Video Summary Demo</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;600;700&family=Inter:wght@400;500&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; border-radius: 0; }
+    body {
+      background: #050508;
+      color: #e8e6e3;
+      font-family: 'Inter', system-ui, sans-serif;
+      line-height: 1.6;
+      min-height: 100vh;
+    }
+    :root {
+      --accent: #ffb700;
+      --muted: #777680;
+      --border: #2a2a30;
+      --border-subtle: #1a1a20;
+      --surface-1: #0c0c10;
+      --surface-2: #111115;
+      --canvas: #050508;
+      --text: #e8e6e3;
+      --fail: #ff3b3b;
+      --font-display: 'Space Grotesk', system-ui, sans-serif;
+      --font-body: 'Inter', system-ui, sans-serif;
+      --font-mono: 'JetBrains Mono', ui-monospace, monospace;
+    }
+    .wrapper { max-width: 720px; margin: 0 auto; padding: 0 20px; }
+    header {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 50;
+      display: flex; justify-content: center; padding: 20px;
+    }
+    nav {
+      display: flex; align-items: center; gap: 12px;
+      padding: 8px 16px; font-family: var(--font-mono); font-size: 12px;
+      background: rgba(12,12,16,0.85); backdrop-filter: blur(16px);
+      border: 1px solid var(--border-subtle); border-radius: 999px;
+    }
+    nav .logo { font-weight: 700; color: var(--accent); font-family: var(--font-display); text-decoration: none; }
+    nav .sep { width: 1px; height: 12px; background: var(--border); }
+    nav .label { color: var(--text); padding: 3px 10px; background: rgba(255,255,255,0.04); border-radius: 999px; }
+    nav a { color: var(--muted); text-decoration: none; padding: 3px 10px; border-radius: 999px; }
+    main { padding-top: 100px; padding-bottom: 60px; }
+    h1 {
+      font-family: var(--font-display); font-size: clamp(2.5rem, 6vw, 4rem);
+      font-weight: 700; line-height: 1.05; letter-spacing: -0.04em; margin-bottom: 16px;
+    }
+    .badge {
+      display: inline-block; font-family: var(--font-mono); font-size: 10px;
+      letter-spacing: 0.15em; text-transform: uppercase; color: var(--accent);
+      padding: 3px 10px; background: rgba(255,183,0,0.06);
+      border: 1px solid rgba(255,183,0,0.12); border-radius: 999px; margin-bottom: 12px;
+    }
+    .subtitle {
+      font-family: var(--font-mono); font-size: 14px; color: var(--muted);
+      max-width: 460px; line-height: 1.65; margin-bottom: 32px;
+    }
+    .video-frame { background: var(--surface-1); border: 1px solid var(--border-subtle); padding: 3px; max-width: 640px; margin-bottom: 16px; }
+    .video-frame .aspect { position: relative; padding-top: 56.25%; background: var(--canvas); }
+    .video-frame iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: none; }
+    .title-row { display: flex; align-items: start; justify-content: space-between; gap: 16px; margin-bottom: 24px; }
+    .title-row h2 { font-family: var(--font-display); font-size: 17px; font-weight: 600; line-height: 1.4; }
+    .title-row a {
+      flex-shrink: 0; padding: 8px 16px; font-family: var(--font-mono); font-size: 11px;
+      font-weight: 600; background: var(--surface-2); border: 1px solid var(--border);
+      color: var(--accent); text-decoration: none; transition: all 0.2s;
+    }
+    .title-row a:hover { background: rgba(255,183,0,0.08); }
+    .card {
+      background: var(--surface-1); border: 1px solid var(--border-subtle);
+      padding: 20px; margin-bottom: 16px;
+    }
+    .section-label {
+      font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.12em;
+      text-transform: uppercase; color: var(--accent); font-weight: 700; margin-bottom: 12px;
+    }
+    .tldr {
+      border-left: 3px solid var(--accent); background: rgba(255,183,0,0.04);
+      padding: 20px 24px; margin-bottom: 20px;
+    }
+    .tldr p { font-family: var(--font-body); font-size: 16px; line-height: 1.7; }
+    .chapter-list { position: relative; padding-left: 16px; }
+    .chapter-list::before {
+      content: ''; position: absolute; left: 3px; top: 6px; bottom: 6px;
+      width: 1px; background: var(--border);
+    }
+    .chapter-item {
+      display: block; width: 100%; text-align: left; padding: 10px 0;
+      background: none; border: none; color: var(--text); cursor: pointer; position: relative;
+    }
+    .chapter-item::before {
+      content: ''; position: absolute; left: -16px; top: 50%; transform: translateY(-50%);
+      width: 8px; height: 8px; border-radius: 50%; background: var(--accent); opacity: 0.75;
+    }
+    .chapter-item .time {
+      font-family: var(--font-mono); font-size: 11px; color: var(--accent);
+      text-decoration: underline; text-decoration-style: dotted; text-underline-offset: 3px;
+      margin-right: 10px;
+    }
+    .chapter-item .ch-title { font-size: 14px; font-weight: 600; }
+    .chapter-item .ch-summary {
+      font-family: var(--font-mono); font-size: 10px; color: var(--muted);
+      margin-left: 52px; line-height: 1.5; margin-top: 2px;
+    }
+    .kp-list { list-style: none; }
+    .kp-item {
+      display: flex; gap: 12px; padding: 8px 0; font-size: 13px; line-height: 1.55;
+      border-bottom: 1px solid var(--border-subtle);
+    }
+    .kp-item:last-child { border-bottom: none; }
+    .kp-dot { flex-shrink: 0; margin-top: 6px; width: 5px; height: 5px; border-radius: 50%; background: var(--accent); opacity: 0.5; }
+    .kp-time {
+      flex-shrink: 0; font-family: var(--font-mono); font-size: 11px; color: var(--accent);
+      text-decoration: underline; text-decoration-style: dotted; text-underline-offset: 3px;
+    }
+    .highlight-item {
+      border-left: 3px solid var(--accent); padding-left: 18px; margin-bottom: 20px;
+    }
+    .highlight-item:last-child { margin-bottom: 0; }
+    .highlight-item p { font-size: 15px; font-style: italic; line-height: 1.6; }
+    .highlight-item .meta {
+      display: flex; align-items: center; gap: 10px; margin-top: 8px; flex-wrap: wrap;
+    }
+    .highlight-item .meta .time {
+      font-family: var(--font-mono); font-size: 11px; color: var(--accent);
+      text-decoration: underline; text-decoration-style: dotted; text-underline-offset: 3px;
+    }
+    .highlight-item .meta .ctx { font-family: var(--font-mono); font-size: 10px; color: var(--muted); }
+    .cta {
+      text-align: center; padding: 32px 0; border-top: 1px solid var(--border-subtle); margin-top: 32px;
+    }
+    .cta p { font-family: var(--font-mono); font-size: 13px; color: var(--muted); margin-bottom: 16px; }
+    .cta a {
+      display: inline-block; padding: 12px 28px; font-family: var(--font-mono); font-size: 13px;
+      font-weight: 700; background: var(--accent); color: #000; text-decoration: none;
+      border: 1px solid var(--accent); transition: all 0.2s;
+    }
+    .cta a:hover { background: #ffd060; transform: scale(0.97); }
+    footer {
+      border-top: 1px solid var(--border-subtle); padding: 24px 0; margin-top: 40px;
+    }
+    footer .inner { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; }
+    footer .brand { font-family: var(--font-display); font-size: 14px; color: var(--accent); font-weight: 700; }
+    footer .meta { font-family: var(--font-mono); font-size: 11px; color: var(--muted); }
+  </style>
+</head>
+<body>
+  <header>
+    <nav>
+      <a href="https://github.com/mahesh-diwan/recap" class="logo">rc</a>
+      <span class="sep"></span>
+      <span class="label">Demo</span>
+      <a href="https://github.com/mahesh-diwan/recap">GitHub</a>
+    </nav>
+  </header>
+
+  <main>
+    <div class="wrapper">
+      <div class="badge">Demo Summary</div>
+      <h1>Every Way To Run Open Source AI Models</h1>
+      <p class="subtitle">Pre-cached AI summary of a YouTube video. No Ollama required — this is what Recap produces.</p>
+
+      <div class="video-frame">
+        <div class="aspect">
+          <iframe src="https://www.youtube.com/embed/vehYE1DfkZg" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+        </div>
+      </div>
+
+      <div class="title-row">
+        <h2>Every Way To Run Open Source AI Models</h2>
+        <a href="https://www.youtube.com/watch?v=vehYE1DfkZg" target="_blank">Watch on YouTube</a>
+      </div>
+
+      <div id="content"></div>
+
+      <div class="cta">
+        <p>Run this locally with your own videos</p>
+        <a href="https://github.com/mahesh-diwan/recap">Clone Recap on GitHub</a>
+      </div>
+    </div>
+  </main>
+
+  <footer>
+    <div class="wrapper">
+      <div class="inner">
+        <div>
+          <span class="brand">rc</span>
+          <span class="meta" style="margin-left: 12px;">Recap — AI video summaries</span>
+        </div>
+        <span class="meta">v2.1</span>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    const DATA = {"tldr":"The video covers every major method for running open-source AI models, organized from easiest to hardest across 4 main categories (local, browser/playground, managed inference APIs, VPS) plus 2 bonus categories (managed cloud, on-device/edge).","chapters":[{"title":"Introduction to Open Source AI Models","startTime":"00:00","startSeconds":0,"summary":"Defines open-source AI models and their three core benefits: full control over deployment, customizability through fine-tuning, and zero usage cost. Covers popular models as of March 2026."},{"title":"Category 1: Running Models Locally","startTime":"01:44","startSeconds":104,"summary":"Covers local deployment from easy (Ollama desktop app) to medium (calling localhost:11434 from your code) to hard (fine-tuning locally with Unsloth). Discusses hardware requirements including that a MacBook Air M4 with 16GB can run 4B and most 8B models."},{"title":"Category 2: Browser & Hosted Playgrounds","startTime":"07:45","startSeconds":465,"summary":"The easiest category for experimenting. Covers arena.ai, Groq.com, Hugging Face Spaces for direct browser access. Also covers Google Colab notebooks with free T4 GPU for education and fine-tuning."},{"title":"Category 3: Managed Inference APIs","startTime":"10:41","startSeconds":641,"summary":"For building software with open-source models without hosting them. Providers like Groq, Together AI, and Fireworks AI host models for you. Just get an API key and call it in ~5 lines of code."},{"title":"Category 4: Virtual Private Servers (VPS)","startTime":"11:55","startSeconds":715,"summary":"Rent a VPS (~$5/month from Hetzner or Hostinger), SSH in, install Ollama, and start building. Covers GPU rental via RunPod/Vast.ai for larger models, Docker for running multiple apps."},{"title":"Bonus: Managed Cloud Solutions","startTime":"15:08","startSeconds":908,"summary":"For startups and enterprise needing automatic scaling. Best for apps with unpredictable high traffic or deploying custom fine-tuned models."},{"title":"Bonus: On-Device / Edge AI","startTime":"15:58","startSeconds":958,"summary":"Models shipped inside applications so the user's device runs everything. Current examples include Apple Intelligence on iOS and Samsung Gemini Nano on Android."}],"keyPoints":[{"point":"Open-source AI models are just as good as closed-source models in 2026 and offer three benefits: full deployment control, customizability, and zero cost.","timestamp":"01:01"},{"point":"A MacBook Air M4 with 16GB RAM can run any 4B model and most 8B models — hardware requirements are more accessible than most people think.","timestamp":"02:55"},{"point":"Ollama's local API runs on localhost:11434 — your code calls this endpoint to use local models in your own software.","timestamp":"03:35"},{"point":"Browser playgrounds (arena.ai, Groq.com) are the easiest way to try open-source models with zero setup, but offer no privacy.","timestamp":"08:00"},{"point":"Managed inference APIs (Groq, Together AI, Fireworks AI) let you build with open-source models using just an API key and ~5 lines of code.","timestamp":"11:00"},{"point":"A $5/month VPS from Hetzner or Hostinger is enough to host open-source models for production use.","timestamp":"12:50"},{"point":"Docker containers let you run multiple models and apps simultaneously on a single VPS without conflicts.","timestamp":"13:47"},{"point":"The hybrid approach — local models on a Mac mini plus a VPS-hosted app connected via Tailscale — is cheap and secure.","timestamp":"14:03"}],"highlights":[{"quote":"It's a common misconception when people think that it's really hard to run open-source models. That is just not true anymore.","timestamp":"00:04","context":"Opening thesis challenging the myth that open-source models require fancy hardware or coding expertise."},{"quote":"Software goes knock-knock on room 11434. Ollama answers the door and provides the model that you want.","timestamp":"03:49","context":"Colorful explanation of how local model APIs work — your code calls Ollama's default port."},{"quote":"They're not going to just rent you a GPU for free, right? So be careful about what you're putting into these.","timestamp":"09:51","context":"Warning about using free Colab notebooks — all data goes back to Google and sessions expire."},{"quote":"You heard it here first — on-device/edge AI is going to become really popular at some point in the near future.","timestamp":"16:05","context":"Predicting that on-device AI models will become a major deployment category soon."}]};
+
+    function jumpTo(seconds) {
+      const iframe = document.querySelector('.video-frame iframe');
+      iframe.src = `https://www.youtube.com/embed/vehYE1DfkZg?start=${seconds}&autoplay=1`;
+    }
+
+    function render() {
+      const el = document.getElementById('content');
+      let html = '';
+
+      // TL;DR
+      html += `<div class="tldr"><div class="section-label">TL;DR</div><p>${DATA.tldr}</p></div>`;
+
+      // Chapters
+      if (DATA.chapters.length) {
+        html += `<div class="card"><div class="section-label">Chapters</div><div class="chapter-list">`;
+        for (const ch of DATA.chapters) {
+          html += `<button class="chapter-item" onclick="jumpTo(${ch.startSeconds})">
+            <span class="time">${ch.startTime}</span><span class="ch-title">${ch.title}</span>
+            <div class="ch-summary">${ch.summary}</div>
+          </button>`;
+        }
+        html += `</div></div>`;
+      }
+
+      // Key Points
+      if (DATA.keyPoints.length) {
+        html += `<div class="card"><div class="section-label">Key Points</div><ul class="kp-list">`;
+        for (const kp of DATA.keyPoints) {
+          html += `<li class="kp-item">
+            <span class="kp-dot"></span>
+            <span class="kp-time" onclick="jumpTo(${kp.timestamp})" style="cursor:pointer">${kp.timestamp}</span>
+            <span style="opacity:0.9">${kp.point}</span>
+          </li>`;
+        }
+        html += `</ul></div>`;
+      }
+
+      // Highlights
+      if (DATA.highlights.length) {
+        html += `<div class="card"><div class="section-label">Highlights</div>`;
+        for (const h of DATA.highlights) {
+          html += `<div class="highlight-item">
+            <p>&ldquo;${h.quote}&rdquo;</p>
+            <div class="meta">
+              <span class="time" onclick="jumpTo(${h.timestamp})" style="cursor:pointer">${h.timestamp}</span>
+              <span class="ctx">${h.context}</span>
+            </div>
+          </div>`;
+        }
+        html += `</div>`;
+      }
+
+      el.innerHTML = html;
+    }
+
+    render();
+  </script>
+</body>
+</html>

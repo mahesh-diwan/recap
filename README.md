@@ -2,6 +2,8 @@
 
 AI-powered YouTube video summaries using open-source models. Runs locally — no API keys, no cloud.
 
+[**Live Demo**](https://mahesh-diwan.github.io/recap/) — see a pre-cached summary without installing anything.
+
 ## Features
 
 - Structured summaries: TL;DR, chapters, key points, highlights
