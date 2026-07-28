@@ -61,7 +61,7 @@ const steps = [
     num: "03",
     title: "Process",
     description:
-      "The transcript is processed by an open-source language model. A structured prompt instructs the model to produce chapters, key points, highlights, facts, and action items.",
+      "The transcript is processed by an open-source language model. A structured prompt instructs the model to produce chapters, key points, and highlights.",
     detail: "Supports Qwen (Alibaba), Llama (Meta), Gemma (Google), Mistral, and more via Ollama. No GPU required.",
   },
   {
@@ -69,7 +69,7 @@ const steps = [
     title: "Output",
     description:
       "You get a structured summary with clickable timestamps. Jump to any point in the video directly from the summary. Export the full summary as Markdown.",
-    detail: "JSON structure: tldr, chapters[], keyPoints[], highlights[], facts[], actionItems[]. All with timestamps.",
+    detail: "JSON structure: tldr, chapters[], keyPoints[], highlights[]. All with timestamps.",
   },
 ];
 
