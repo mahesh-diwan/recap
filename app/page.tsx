@@ -244,6 +244,35 @@ export default function Home() {
     setStages((prev) => prev.map((s) => ({ ...s, status: "pending" as const })));
   };
 
+  const handleDemo = async () => {
+    setError(null);
+    setSummary(null);
+    setMarkdown("");
+    setRawJson("");
+    setPhase("loading-summary");
+    setStages([
+      { label: "Loading demo", status: "active" },
+      { label: "Structuring insights", status: "pending" },
+    ]);
+
+    try {
+      const res = await fetch("/api/demo");
+      if (!res.ok) throw new Error("Failed to load demo");
+      const data = await res.json();
+
+      setVideoId(data.videoId);
+      setTitle(data.title);
+      setSummary(data.summary);
+      setMarkdown(data.markdown);
+      setShowTranscript(false);
+      setStages((prev) => prev.map((s) => ({ ...s, status: "done" as const })));
+      setPhase("done");
+    } catch (err: any) {
+      setError(err.message || "Failed to load demo");
+      setPhase("idle");
+    }
+  };
+
   const handleDownload = () => {
     if (!markdown) return;
     const blob = new Blob([markdown], { type: "text/markdown" });
@@ -360,6 +389,7 @@ export default function Home() {
 
           <RevealSection delay={3}>
             <form onSubmit={(e) => { e.preventDefault(); handleSummarize(); }} className="flex gap-3">
+
               <input
                 type="text"
                 value={url}
@@ -394,6 +424,19 @@ export default function Home() {
                 </button>
               )}
             </form>
+          </RevealSection>
+
+          <RevealSection delay={4}>
+            <div className="text-center">
+              <button
+                onClick={handleDemo}
+                disabled={!isIdle}
+                className="font-mono text-xs cursor-pointer disabled:opacity-30"
+                style={{ background: "none", border: "none", color: "var(--muted)", padding: "8px 0", textDecoration: "underline", textDecorationStyle: "dotted", textUnderlineOffset: 3 }}
+              >
+                or try a demo summary
+              </button>
+            </div>
           </RevealSection>
 
           {/* Stage progress — visible during loading */}
