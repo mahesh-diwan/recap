@@ -162,7 +162,7 @@
     <div class="wrapper">
       <div class="badge">Demo Summary</div>
       <h1>Every Way To Run Open Source AI Models</h1>
-      <p class="subtitle">Pre-cached AI summary of a YouTube video. No Ollama required — this is what Recap produces.</p>
+      <p class="subtitle">Click below to see what Recap produces — no Ollama needed.</p>
 
       <div class="video-frame">
         <div class="aspect">
@@ -170,9 +170,19 @@
         </div>
       </div>
 
+      <p style="font-family: var(--font-mono); font-size: 11px; color: var(--muted); margin-top: -12px; margin-bottom: 20px;">
+        Demo summary of <a href="https://www.youtube.com/watch?v=vehYE1DfkZg" target="_blank" style="color: var(--accent); text-decoration: underline; text-decoration-style: dotted;">"Every Way To Run Open Source AI Models"</a> by <a href="https://www.youtube.com/@TinaHuang" target="_blank" style="color: var(--accent); text-decoration: underline; text-decoration-style: dotted;">Tina Huang</a>.
+      </p>
+
       <div class="title-row">
         <h2>Every Way To Run Open Source AI Models</h2>
         <a href="https://www.youtube.com/watch?v=vehYE1DfkZg" target="_blank">Watch on YouTube</a>
+      </div>
+
+      <div style="text-align:center; margin: 24px 0;">
+        <button onclick="loadDemo()" id="load-btn" style="padding: 12px 28px; font-family: var(--font-mono); font-size: 13px; font-weight: 700; background: var(--accent); color: #000; border: 1px solid var(--accent); cursor: pointer; transition: all 0.2s;">
+          Load Summary
+        </button>
       </div>
 
       <div id="content"></div>
@@ -254,7 +264,14 @@
       el.innerHTML = html;
     }
 
-    render();
+    function loadDemo() {
+      const btn = document.getElementById('load-btn');
+      btn.textContent = 'Loaded';
+      btn.style.opacity = '0.5';
+      btn.style.cursor = 'default';
+      btn.disabled = true;
+      render();
+    }
   </script>
 </body>
 </html>

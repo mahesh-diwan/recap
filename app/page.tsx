@@ -233,7 +233,12 @@ export default function Home() {
         setPhase("idle");
         return;
       }
-      setError(err.message || "Something went wrong");
+      const msg = err.message || "Something went wrong";
+      if (msg.includes("Ollama not running") || msg.includes("No Ollama model")) {
+        setError("Ollama is not running. Clone the repo and run it locally — see github.com/mahesh-diwan/recap");
+      } else {
+        setError(msg);
+      }
       setPhase("idle");
     }
   };
@@ -455,7 +460,7 @@ export default function Home() {
             <span style={{ color: "var(--accent)", lineHeight: 1, marginTop: 2 }}>&#9888;</span>
             <div>
               <div className="mb-1 font-semibold" style={{ fontFamily: "var(--font-mono)", fontSize: 10, color: "var(--accent)", letterSpacing: "0.08em" }}>ERROR</div>
-              <span style={{ fontFamily: "var(--font-mono)", fontSize: 12, color: "var(--fail)" }}>{error}</span>
+              <span style={{ fontFamily: "var(--font-mono)", fontSize: 12, color: "var(--fail)", wordBreak: "break-word" }}>{error}</span>
             </div>
           </div>
         )}
